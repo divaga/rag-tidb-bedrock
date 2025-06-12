@@ -50,7 +50,7 @@ def store_embeddings_in_tidb(text_chunks, embeddings):
         CREATE TABLE IF NOT EXISTS pdf_embeddings (
             id VARCHAR(64) PRIMARY KEY,
             chunk TEXT,
-            embedding VECTOR(FLOAT, 1536)
+            embedding VECTOR(1536)
         )""")
     for chunk, emb in zip(text_chunks, embeddings):
         chunk_id = str(uuid.uuid4())
