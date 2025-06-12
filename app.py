@@ -55,11 +55,10 @@ def store_embeddings_in_tidb(text_chunks, embeddings):
     """)
     for chunk, emb in zip(text_chunks, embeddings):
         chunk_id = str(uuid.uuid4())
-        embedding_str = ",".join(map(str, emb))
         cursor.execute("""
             INSERT INTO pdf_embeddings (id, chunk, embedding) 
-            VALUES (%s, %s, CAST(%s AS VECTOR(FLOAT, 1536)))
-        """, (chunk_id, chunk, embedding_str))
+            VALUES (%s, %s, %s))
+        """, (chunk_id, chunk, emb))
     conn.commit()
     cursor.close()
     conn.close()
