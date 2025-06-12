@@ -1,0 +1,6 @@
+streamlit
+boto3
+langchain
+PyPDF2
+mysql-connector-python
+numpy
