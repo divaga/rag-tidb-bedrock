@@ -57,7 +57,7 @@ def store_embeddings_in_tidb(text_chunks, embeddings):
         chunk_id = str(uuid.uuid4())
         cursor.execute("""
             INSERT INTO pdf_embeddings (id, chunk, embedding) 
-            VALUES (%s, %s, %s))
+            VALUES (%s, %s, %s)
         """, (chunk_id, chunk, str(emb)))
     conn.commit()
     cursor.close()
