@@ -29,7 +29,7 @@ boto3_bedrock = boto3.client(
 )
 
 embedding_model = BedrockEmbeddings(client=boto3_bedrock, model_id="amazon.titan-embed-text-v1")
-llm_model = Bedrock(client=boto3_bedrock, model_id="anthropic.claude-v2")
+llm_model = Bedrock(client=boto3_bedrock, model_id="amazon.titan-text-lite-v1")
 
 # --- PDF parsing and embedding ---
 def parse_pdf(file):
