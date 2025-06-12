@@ -67,14 +67,13 @@ def fetch_similar_chunks(query, k=3):
     conn = mysql.connector.connect(**TIDB_CONFIG)
     cursor = conn.cursor()
     query_emb = embedding_model.embed_query(query)
-    query_str = ",".join(map(str, query_emb))
 
     cursor.execute("""
-        SELECT chunk, L2_DISTANCE(embedding, CAST(%s AS VECTOR(FLOAT, 1536))) AS distance
+        SELECT chunk, VEC_L2_DISTANCE(embedding, %s) AS distance
         FROM pdf_embeddings
         ORDER BY distance ASC
         LIMIT %s
-    """, (query_str, k))
+    """, (str(query_emb), k))
 
     results = cursor.fetchall()
     cursor.close()
