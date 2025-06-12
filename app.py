@@ -5,9 +5,9 @@ import boto3
 import uuid
 from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings import BedrockEmbeddings
-from langchain.vectorstores import FAISS
-from langchain.llms import Bedrock
+from langchain_community.embeddings import BedrockEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_community.llms import Bedrock
 import mysql.connector
 import numpy as np
 
@@ -29,7 +29,7 @@ boto3_bedrock = boto3.client(
 )
 
 embedding_model = BedrockEmbeddings(client=boto3_bedrock, model_id="amazon.titan-embed-text-v1")
-llm_model = Bedrock(client=boto3_bedrock, model_id="amazon.titan-text-lite-v1")
+llm_model = Bedrock(client=boto3_bedrock, model_id="anthropic.claude-v2")
 
 # --- PDF parsing and embedding ---
 def parse_pdf(file):
@@ -51,12 +51,15 @@ def store_embeddings_in_tidb(text_chunks, embeddings):
             id VARCHAR(64) PRIMARY KEY,
             chunk TEXT,
             embedding VECTOR(1536)
-        )""")
+        )
+    """)
     for chunk, emb in zip(text_chunks, embeddings):
         chunk_id = str(uuid.uuid4())
-        emb_list = list(map(float, emb))
-        cursor.execute("INSERT INTO pdf_embeddings (id, chunk, embedding) VALUES (%s, %s, %s)",
-                       (chunk_id, chunk, emb_list))
+        embedding_str = ",".join(map(str, emb))
+        cursor.execute("""
+            INSERT INTO pdf_embeddings (id, chunk, embedding) 
+            VALUES (%s, %s, CAST(%s AS VECTOR(FLOAT, 1536)))
+        """, (chunk_id, chunk, embedding_str))
     conn.commit()
     cursor.close()
     conn.close()
@@ -65,29 +68,32 @@ def fetch_similar_chunks(query, k=3):
     conn = mysql.connector.connect(**TIDB_CONFIG)
     cursor = conn.cursor()
     query_emb = embedding_model.embed_query(query)
-    cursor.execute("SELECT chunk, embedding FROM pdf_embeddings")
-    chunks = []
-    for chunk, emb in cursor.fetchall():
-        emb = np.array(emb, dtype=float)
-        score = np.linalg.norm(np.array(query_emb) - emb)
-        chunks.append((score, chunk))
+    query_str = ",".join(map(str, query_emb))
+
+    cursor.execute("""
+        SELECT chunk, L2_DISTANCE(embedding, CAST(%s AS VECTOR(FLOAT, 1536))) AS distance
+        FROM pdf_embeddings
+        ORDER BY distance ASC
+        LIMIT %s
+    """, (query_str, k))
+
+    results = cursor.fetchall()
     cursor.close()
     conn.close()
-    chunks.sort()
-    return [chunk for _, chunk in chunks[:k]]
+    return [row[0] for row in results]
 
 def generate_answer(context, question):
     prompt = f"""
-    You are a helpful assistant. Based on the following context, answer the question:
+You are a helpful assistant. Based on the following context, answer the question:
 
-    Context:
-    {context}
+Context:
+{context}
 
-    Question:
-    {question}
+Question:
+{question}
 
-    Answer:
-    """
+Answer:
+"""
     return llm_model(prompt)
 
 # --- Streamlit UI ---
