@@ -5,11 +5,11 @@ import boto3
 import uuid
 from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import BedrockEmbeddings
-from langchain_community.vectorstores import FAISS
-from langchain_community.llms import Bedrock
+from langchain.embeddings import BedrockEmbeddings
+from langchain.llms import Bedrock
 import mysql.connector
 import numpy as np
+import json
 
 # --- TiDB connection using Streamlit secrets ---
 TIDB_CONFIG = {
@@ -29,9 +29,9 @@ boto3_bedrock = boto3.client(
 )
 
 embedding_model = BedrockEmbeddings(client=boto3_bedrock, model_id="amazon.titan-embed-text-v1")
-llm_model = Bedrock(client=boto3_bedrock, model_id="amazon.titan-text-lite-v1")
+llm_model = Bedrock(client=boto3_bedrock, model_id="mistral.mistral-7b-instruct-v0:2")
 
-# --- PDF parsing and embedding ---
+# --- PDF parsing and Q&A generation ---
 def parse_pdf(file):
     reader = PdfReader(file)
     text = ""
@@ -43,76 +43,80 @@ def split_text(text):
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     return splitter.split_text(text)
 
-def store_embeddings_in_tidb(text_chunks, embeddings):
+def generate_qa_pairs(chunk):
+    prompt = f"""
+    Extract up to 3 question-answer pairs from the following text:
+
+    {chunk}
+
+    Respond in JSON format like:
+    [{{"question": "...", "answer": "..."}}, ...]
+    """
+    response = llm_model(prompt)
+    try:
+        return json.loads(response)
+    except:
+        return []
+
+def store_qa_embeddings_in_tidb(qa_pairs):
     conn = mysql.connector.connect(**TIDB_CONFIG)
     cursor = conn.cursor()
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS pdf_embeddings (
+        CREATE TABLE IF NOT EXISTS qa_embeddings (
             id VARCHAR(64) PRIMARY KEY,
-            chunk TEXT,
+            question TEXT,
+            answer TEXT,
             embedding VECTOR(1536)
-        )
-    """)
-    for chunk, emb in zip(text_chunks, embeddings):
-        chunk_id = str(uuid.uuid4())
-        cursor.execute("""
-            INSERT INTO pdf_embeddings (id, chunk, embedding) 
-            VALUES (%s, %s, %s)
-        """, (chunk_id, chunk, str(emb)))
+        )""")
+    for qa in qa_pairs:
+        question = qa.get("question")
+        answer = qa.get("answer")
+        if question and answer:
+            embedding = embedding_model.embed_query(question)
+            qa_id = str(uuid.uuid4())
+            cursor.execute("INSERT INTO qa_embeddings (id, question, answer, embedding) VALUES (%s, %s, %s, %s)",
+                           (qa_id, question, answer, embedding))
     conn.commit()
     cursor.close()
     conn.close()
 
-def fetch_similar_chunks(query, k=3):
+def fetch_best_answer(user_question, k=1):
     conn = mysql.connector.connect(**TIDB_CONFIG)
     cursor = conn.cursor()
-    query_emb = embedding_model.embed_query(query)
-
-    cursor.execute("""
-        SELECT chunk, VEC_L2_DISTANCE(embedding, %s) AS distance
-        FROM pdf_embeddings
-        ORDER BY distance ASC
-        LIMIT %s
-    """, (str(query_emb), k))
-
-    results = cursor.fetchall()
+    query_emb = embedding_model.embed_query(user_question)
+    cursor.execute("SELECT question, answer, embedding FROM qa_embeddings")
+    cursor.execute("SELECT a.question,a.answer,vec_cosine_distance(a.embedding,'" + query_emb + "') as score FROM qa_embeddings a ORDER BY score ASC LIMIT 3")
+    candidates = []
+    for question, answer, score in cursor.fetchall():
+        candidates.append((score, question, answer))
     cursor.close()
     conn.close()
-    return [row[0] for row in results]
-
-def generate_answer(context, question):
-    prompt = f"""
-You are a helpful assistant. Based on the following context, answer the question:
-
-Context:
-{context}
-
-Question:
-{question}
-
-Answer:
-"""
-    return llm_model(prompt)
+    candidates.sort()
+    return candidates[:k]
 
 # --- Streamlit UI ---
-st.title("📄 PDF-based RAG Chatbot with Amazon Bedrock and TiDB")
+st.title("📄 PDF Q&A Chatbot with Amazon Bedrock and TiDB")
 
 uploaded_file = st.file_uploader("Upload a PDF", type="pdf")
 if uploaded_file:
     text = parse_pdf(uploaded_file)
     chunks = split_text(text)
-    st.info(f"Parsed and split into {len(chunks)} text chunks.")
-    embeddings = embedding_model.embed_documents(chunks)
-    store_embeddings_in_tidb(chunks, embeddings)
-    st.success("Embeddings stored in TiDB.")
+    all_qa_pairs = []
+    for chunk in chunks:
+        qa_pairs = generate_qa_pairs(chunk)
+        all_qa_pairs.extend(qa_pairs)
+    st.info(f"Generated {len(all_qa_pairs)} Q&A pairs.")
+    store_qa_embeddings_in_tidb(all_qa_pairs)
+    st.success("Q&A pairs embedded and stored in TiDB.")
 
-query = st.text_input("Ask a question based on uploaded content:")
+query = st.text_input("Ask a question:")
 if query:
-    similar_chunks = fetch_similar_chunks(query)
-    context = "\n".join(similar_chunks)
-    response = generate_answer(context, query)
-    st.write("### Answer:")
-    st.write(response)
+    answers = fetch_best_answer(query)
+    if answers:
+        st.write("### Most relevant answer:")
+        st.write(answers[0][2])  # Display the best answer
+    else:
+        st.warning("No matching answer found.")
 
 st.markdown("---")
 st.markdown("Built with 🧠 Amazon Bedrock, 🐬 TiDB Serverless, and 📚 LangChain")
