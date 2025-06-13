@@ -84,7 +84,6 @@ def fetch_best_answer(user_question, k=1):
     conn = mysql.connector.connect(**TIDB_CONFIG)
     cursor = conn.cursor()
     query_emb = embedding_model.embed_query(user_question)
-    cursor.execute("SELECT question, answer, embedding FROM qa_embeddings")
     cursor.execute("SELECT a.question,a.answer,vec_cosine_distance(a.embedding,'" + query_emb + "') as score FROM qa_embeddings a ORDER BY score ASC LIMIT 3")
     candidates = []
     for question, answer, score in cursor.fetchall():
