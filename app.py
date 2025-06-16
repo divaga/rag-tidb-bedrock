@@ -74,11 +74,11 @@ def store_qa_embeddings_in_tidb(qa_pairs):
         if question and answer:
             embedding = embedding_model.embed_query(question)
             qa_id = str(uuid.uuid4())
-            #cursor.execute("INSERT INTO qa_embeddings (id, question, answer, embedding) VALUES (%s, %s, %s, %s)",
-            #               (qa_id, question, answer, str(embedding))
-            st.write( str(embedding))
-    #conn.commit()
-    #cursor.close()
+            embedding_str = ",".join(str(x) for x in embedding)
+            cursor.execute("INSERT INTO qa_embeddings (id, question, answer, embedding) VALUES (%s, %s, %s, %s)",
+                           (qa_id, question, answer, embedding_str))
+    conn.commit()
+    cursor.close()
     conn.close()
 
 def fetch_best_answer(user_question, k=1):
