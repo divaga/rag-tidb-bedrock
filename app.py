@@ -75,7 +75,7 @@ def store_qa_embeddings_in_tidb(qa_pairs):
             embedding = embedding_model.embed_query(question)
             qa_id = str(uuid.uuid4())
             cursor.execute("INSERT INTO qa_embeddings (id, question, answer, embedding) VALUES (%s, %s, %s, %s)",
-                           (qa_id, question, answer, str(embedding))
+                           (qa_id, question, answer, str(embedding)))
     conn.commit()
     cursor.close()
     conn.close()
