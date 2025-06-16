@@ -5,7 +5,7 @@ import boto3
 import uuid
 from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings import BedrockEmbeddings
+from langchain_community.embeddings import BedrockEmbeddings
 from langchain.llms import Bedrock
 import mysql.connector
 import numpy as np
@@ -84,7 +84,7 @@ def fetch_best_answer(user_question, k=1):
     conn = mysql.connector.connect(**TIDB_CONFIG)
     cursor = conn.cursor()
     query_emb = embedding_model.embed_query(user_question)
-    cursor.execute("SELECT a.question,a.answer,vec_cosine_distance(a.embedding,'" + query_emb + "') as score FROM qa_embeddings a ORDER BY score ASC LIMIT 3")
+    cursor.execute("SELECT a.question,a.answer,vec_cosine_distance(a.embedding,'" + str(query_emb) + "') as score FROM qa_embeddings a ORDER BY score ASC LIMIT 3")
     candidates = []
     for question, answer, score in cursor.fetchall():
         candidates.append((score, question, answer))
