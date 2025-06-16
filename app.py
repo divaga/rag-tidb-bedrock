@@ -6,7 +6,7 @@ import uuid
 from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import BedrockEmbeddings
-from langchain.llms import Bedrock
+from langchain_community.llms import Bedrock
 import mysql.connector
 import numpy as np
 import json
