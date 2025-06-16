@@ -61,8 +61,11 @@ def generate_qa_pairs(chunk):
 def store_qa_embeddings_in_tidb(qa_pairs):
     conn = mysql.connector.connect(**TIDB_CONFIG)
     cursor = conn.cursor()
+     cursor.execute("""
+        DROP TABLE qa_embeddings
+        """)
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS qa_embeddings (
+        CREATE TABLE qa_embeddings (
             id VARCHAR(64) PRIMARY KEY,
             question TEXT,
             answer TEXT,
