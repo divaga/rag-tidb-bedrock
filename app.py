@@ -66,7 +66,7 @@ def store_qa_embeddings_in_tidb(qa_pairs):
             id VARCHAR(64) PRIMARY KEY,
             question TEXT,
             answer TEXT,
-            embedding VECTOR(1536)
+            embedding VECTOR(1536),
             VECTOR INDEX idx_embedding ((VEC_COSINE_DISTANCE(embedding)))
         )""")
     cursor.execute("""
