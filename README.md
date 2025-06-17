@@ -27,6 +27,8 @@ This app allows users to upload a PDF document, generate Q&A pairs and text embe
 
 ## Deployment
 
+- Clone this repo.
+- Download root CA from https://letsencrypt.org/certs/isrgrootx1.pem and put it in `ssl` directory.
 - Deploy on Streamlit Cloud. Go to https://streamlit.io/cloud.
 - Click “New app” → Select your GitHub repo.
 - Choose main branch and app.py as the main file.
