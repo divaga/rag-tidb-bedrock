@@ -383,7 +383,7 @@ def main():
         with st.spinner("🚀 Initializing system..."):
             try:
                 # Get credentials from secrets
-                bearer_token = st.secrets["BEDROCK_BEARER_TOKEN"]
+                bearer_token = st.secrets["AWS_BEARER_TOKEN_BEDROCK"]
                 aws_region = st.secrets.get("AWS_REGION", "us-east-1")
                 db_host = st.secrets["TIDB_HOST"]
                 db_port = int(st.secrets["TIDB_PORT"])
