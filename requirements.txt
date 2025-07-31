@@ -1,7 +1,5 @@
 streamlit
 boto3
-langchain
-langchain-community
-PyPDF2
+pymupdf
 mysql-connector-python
 numpy

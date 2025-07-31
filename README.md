@@ -7,7 +7,6 @@ This app allows users to upload a PDF document, generate Q&A pairs and text embe
 ## Features
 
 - Upload and parse PDF files
-- Create Q&A pairs from uploaded doc
 - Chunk and embed document using Amazon Bedrock
 - Store embeddings in TiDB Cloud Serverless
 - Retrieve similar chunks using vector search (vector distance)
@@ -15,15 +14,6 @@ This app allows users to upload a PDF document, generate Q&A pairs and text embe
 
 ---
 
-## Tech Stack
-
-- [Streamlit](https://streamlit.io/) – UI
-- [Amazon Bedrock](https://aws.amazon.com/bedrock/) – Embeddings + LLM
-- [TiDB Serverless](https://tidb.cloud/) – Vector storage
-- [LangChain](https://www.langchain.com/) – Text chunking and integration
-- [PyPDF2](https://pypi.org/project/PyPDF2/) – PDF parsing
-
----
 
 ## Deployment
 
