@@ -223,7 +223,7 @@ class RAGSystem:
         """Check if document already exists in database"""
         try:
             cursor = self.db_connection.cursor()
-            query = "SELECT COUNT(*) FROM documents WHERE filename = %s AND file_hash = %s"
+            query = "SELECT COUNT(*) FROM bedrock_documents WHERE filename = %s AND file_hash = %s"
             cursor.execute(query, (filename, file_hash))
             count = cursor.fetchone()[0]
             cursor.close()
@@ -238,12 +238,12 @@ class RAGSystem:
             cursor = self.db_connection.cursor()
             
             # Delete existing chunks for this file (if re-uploading)
-            delete_query = "DELETE FROM documents WHERE filename = %s"
+            delete_query = "DELETE FROM bedrock_documents WHERE filename = %s"
             cursor.execute(delete_query, (filename,))
             
             # Insert new chunks
             insert_query = """
-            INSERT INTO documents (filename, chunk_index, content, embedding, file_hash)
+            INSERT INTO bedrock_documents (filename, chunk_index, content, embedding, file_hash)
             VALUES (%s, %s, %s, %s, %s)
             """
             
@@ -272,7 +272,7 @@ class RAGSystem:
             cursor = self.db_connection.cursor()
 
             # Query with vec_cosine_distance and VECTOR syntax
-            query_sql = "SELECT id,filename,content,vec_cosine_distance(embedding,'" + str(embedding_str) + "') AS similarity FROM documents ORDER BY similarity ASC LIMIT " + str(top_k)
+            query_sql = "SELECT id,filename,content,vec_cosine_distance(embedding,'" + str(embedding_str) + "') AS similarity FROM bedrock_documents ORDER BY similarity ASC LIMIT " + str(top_k)
            
             cursor.execute(query_sql)
             results = cursor.fetchall()
@@ -368,7 +368,7 @@ Answer:"""
         """Get total number of documents in database"""
         try:
             cursor = self.db_connection.cursor()
-            cursor.execute("SELECT COUNT(DISTINCT filename) FROM documents")
+            cursor.execute("SELECT COUNT(DISTINCT filename) FROM bedrock_documents")
             count = cursor.fetchone()[0]
             cursor.close()
             return count
