@@ -111,7 +111,7 @@ class RAGSystem:
                 filename VARCHAR(255) NOT NULL,
                 chunk_index INT NOT NULL,
                 content TEXT NOT NULL,
-                embedding VECTOR(1536) NOT NULL,
+                embedding VECTOR(1024) NOT NULL,
                 file_hash VARCHAR(64) NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 INDEX idx_filename (filename),
