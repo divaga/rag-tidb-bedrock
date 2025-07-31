@@ -106,7 +106,7 @@ class RAGSystem:
             # Create table if it doesn't exist
             cursor = self.db_connection.cursor()
             create_table_query = """
-            CREATE TABLE IF NOT EXISTS documents (
+            CREATE TABLE IF NOT EXISTS bedrock_documents (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 filename VARCHAR(255) NOT NULL,
                 chunk_index INT NOT NULL,
@@ -115,7 +115,8 @@ class RAGSystem:
                 file_hash VARCHAR(64) NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 INDEX idx_filename (filename),
-                INDEX idx_file_hash (file_hash)
+                INDEX idx_file_hash (file_hash),
+                VECTOR INDEX idx_embedding ((VEC_COSINE_DISTANCE(embedding)))
             )
             """
             cursor.execute(create_table_query)
@@ -375,8 +376,8 @@ Answer:"""
             return 0
 
 def main():
-    st.title("📚 RAG Document Q&A System (Bedrock Bearer Auth)")
-    st.markdown("Upload documents and ask questions to get AI-powered answers using Amazon Bedrock with Bearer token authentication!")
+    st.title("TiDB + Bedrock RAG Document Q&A")
+    st.markdown("Upload documents and ask questions to get AI-powered answers using Amazon Bedrock with TiDB Vector features!")
     
     # Auto-initialize system on first run
     if not st.session_state.db_initialized:
@@ -459,7 +460,7 @@ def main():
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        st.header("📄 Upload Document")
+        st.header("Upload Document")
         uploaded_file = st.file_uploader(
             "Choose a file",
             type=['pdf', 'txt'],
@@ -496,7 +497,7 @@ def main():
                     st.error("❌ Failed to extract text from document")
     
     with col2:
-        st.header("❓ Ask a Question")
+        st.header("Ask a Question")
         query = st.text_area(
             "Enter your question:",
             placeholder="What would you like to know about your documents?",
