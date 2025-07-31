@@ -29,10 +29,10 @@ TIDB_HOST = "your_host"
 TIDB_USER = "your_user"
 TIDB_PASSWORD = "your_password"
 TIDB_DATABASE = "your_database"
+TIDB_PORT = "your_database_port"
 TIDB_SSL_CA = "/ssl/isrgrootx1.pem"
 
-AWS_ACCESS_KEY_ID = "your_aws_key"
-AWS_SECRET_ACCESS_KEY = "your_aws_secret"
-AWS_REGION = "us-east-1"
+AWS_BEARER_TOKEN_BEDROCK = "your_aws_bedrock_key"
+
 ```
 ---
