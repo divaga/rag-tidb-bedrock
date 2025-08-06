@@ -1,6 +1,6 @@
 # Q&A PDF Chatbot (Streamlit + Amazon Bedrock + TiDB)
 
-This app allows users to upload a PDF document, generate Q&A pairs and text embeddings using Amazon Bedrock, store those embeddings in TiDB Cloud Serverless, and interact with the content via a chatbot interface.
+This app allows users to upload a PDF document, generate text embeddings using Amazon Bedrock, store those embeddings in TiDB Cloud Serverless, and interact with the content via a chatbot interface.
 
 ---
 
